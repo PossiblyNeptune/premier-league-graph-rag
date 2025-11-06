@@ -1,0 +1,92 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Knowledge Graph Connectivity Dashboard</title>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; background-color: #f5f5f5; }
+                .metric { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .metric-title { font-weight: bold; color: #333; font-size: 14px; }
+                .metric-value { font-size: 24px; color: #1f77b4; font-weight: bold; margin-top: 5px; }
+                .section { margin: 20px 0; }
+                h1 { color: #333; }
+                h2 { color: #555; border-bottom: 2px solid #1f77b4; padding-bottom: 5px; }
+                table { width: 100%; border-collapse: collapse; background: white; }
+                th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background-color: #1f77b4; color: white; }
+                tr:hover { background-color: #f5f5f5; }
+                a { color: #1f77b4; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <h1>⚽ Knowledge Graph Connectivity Dashboard</h1>
+            
+            <div class="section">
+                <h2>Graph Overview</h2>
+                <div class="metric">
+                    <div class="metric-title">Total Nodes</div>
+                    <div class="metric-value">1578</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Total Edges</div>
+                    <div class="metric-value">2420</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Graph Density</div>
+                    <div class="metric-value">0.0019</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Average Node Degree</div>
+                    <div class="metric-value">3.07</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Connectivity Status</h2>
+                <div class="metric">
+                    <div class="metric-title">Is Connected</div>
+                    <div class="metric-value">❌ No</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Connected Components</div>
+                    <div class="metric-value">558</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Largest Component Size</div>
+                    <div class="metric-value">831 nodes (52.7%)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-title">Isolated Nodes</div>
+                    <div class="metric-value">496</div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Top Hub Nodes (High Degree Centrality)</h2>
+                <table>
+                    <tr><th>Node ID</th><th>Degree Centrality</th></tr>
+                    <tr><td>1547</td><td>0.0171</td></tr><tr><td>1563</td><td>0.0171</td></tr><tr><td>1564</td><td>0.0171</td></tr><tr><td>1546</td><td>0.0165</td></tr><tr><td>1571</td><td>0.0165</td></tr><tr><td>1557</td><td>0.0159</td></tr><tr><td>1549</td><td>0.0152</td></tr><tr><td>1553</td><td>0.0152</td></tr><tr><td>1572</td><td>0.0146</td></tr><tr><td>1125</td><td>0.014</td></tr>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>Top Bridge Nodes (High Betweenness)</h2>
+                <table>
+                    <tr><th>Node ID</th><th>Betweenness Centrality</th></tr>
+                    <tr><td>258</td><td>0.0498</td></tr><tr><td>192</td><td>0.0455</td></tr><tr><td>569</td><td>0.0449</td></tr><tr><td>1097</td><td>0.0419</td></tr><tr><td>1148</td><td>0.041</td></tr><tr><td>613</td><td>0.0298</td></tr><tr><td>84</td><td>0.0291</td></tr><tr><td>1067</td><td>0.0255</td></tr><tr><td>873</td><td>0.0238</td></tr><tr><td>1313</td><td>0.0202</td></tr>
+                </table>
+            </div>
+            
+            <div class="section">
+                <h2>Visualizations</h2>
+                <ul>
+                    <li><a href="largest_component.html">Interactive Largest Component</a></li>
+                    <li><a href="degree_distribution.html">Degree Distribution</a></li>
+                    <li><a href="component_distribution.html">Component Distribution</a></li>
+                </ul>
+            </div>
+        </body>
+        </html>
+        
