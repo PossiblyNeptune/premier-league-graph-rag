@@ -1,0 +1,31 @@
+# Core NLP + Embeddings
+sentence-transformers==2.5.1
+nltk==3.8.1
+
+# Vector Database (FAISS)
+faiss-cpu==1.7.4
+
+# Graph Construction & Analysis
+networkx==3.2.1
+
+# Visualization Tools
+matplotlib==3.8.3
+plotly==5.19.0
+
+# Data Handling
+pandas==2.2.1
+numpy==1.26.4
+
+# Optional: If using HuggingFace embeddings wrapper instead of SentenceTransformer directly
+# langchain==0.1.13
+# langchain-community==0.0.28
+
+# Logging and Progress Bars
+tqdm==4.66.1
+
+# Word / PDF Report Generation
+python-docx==1.1.0
+reportlab==4.0.9   # Only needed if PDFs are used
+
+# Ollama Local Model Runtime (no PyPI install; needs system install)
+# https://ollama.ai/download
