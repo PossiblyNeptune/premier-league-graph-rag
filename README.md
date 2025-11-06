@@ -92,9 +92,6 @@ streamlit run chatbot.py
 
 ## 📊 Visualization
 
-```bash
-python graph_visualizer.py
-```
 Outputs HTML dashboards inside `graph_visualizations/`.
 
 ---
@@ -105,14 +102,7 @@ Session logs stored in `retrieval_logs/`.
 
 ---
 
-## 📈 Possible Enhancements
-
-- Neo4j backend for large graphs
-- Fine-tuned tactical embedding models
-- Streamlit UI
-
----
-
 ## ✅ Summary
+
 
 This system combines **semantic search + structured tactical relationships**, producing more meaningful football tactical answers than standard RAG.
