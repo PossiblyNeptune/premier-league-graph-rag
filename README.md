@@ -72,7 +72,6 @@ PDFs → Document Processing → Embeddings → Vector Store (FAISS)
 ### Prerequisites
 
 - Python 3.9+
-- 8GB RAM (16GB recommended)
 - Ollama installed ([Download](https://ollama.ai/download))
 
 ### Installation
@@ -228,15 +227,6 @@ graph-rag-football/
 **Edge Creation:**
 - Connect nodes with cosine similarity > 0.7
 - Weight formula: `0.7 × similarity + 0.3 × concept_overlap`
-- Results in ~13-14 edges per node on average
-
-**Graph Statistics:**
-```
-Nodes: ~1,847
-Edges: ~12,453
-Density: 0.0073
-Average Path Length: 3.2 hops
-```
 
 ### 3. Query Processing
 
@@ -306,28 +296,6 @@ where:
 
 ---
 
-## 📊 Performance
-
-### Benchmarks
-
-| Metric | Value | Notes |
-|--------|-------|-------|
-| Avg Response Time | 3.2s | Query → Answer |
-| Vector Search | ~50ms | FAISS lookup |
-| Graph Traversal | ~300ms | 20 nodes |
-| LLM Generation | ~2.8s | Depends on length |
-| Memory Usage | ~2GB | Models + graph |
-
-### Quality Metrics
-
-| Aspect | Score | Description |
-|--------|-------|-------------|
-| Answer Completeness | 85% | Addresses query fully |
-| Factual Accuracy | 92% | Matches source material |
-| Avg Confidence | 0.78 | System confidence score |
-
----
-
 ## 🛠️ Configuration
 
 ### Environment Variables (.env)
@@ -376,40 +344,7 @@ ollama list
 ollama pull gpt-oss:120b-cloud
 ```
 
-### Out of Memory
-
-```bash
-# Reduce memory usage in .env
-CHUNK_SIZE=1000
-MAX_TRAVERSAL_NODES=15
-```
-
-### FAISS Import Error
-
-```bash
-# Reinstall faiss-cpu
-pip uninstall faiss-cpu
-pip install faiss-cpu --no-cache-dir
-```
-
-### Slow Embedding Generation
-
-First run downloads models (~300MB). Subsequent runs use cached models and are much faster.
-
----
-
 ## 📈 Advanced Features
-
-### Query Types & Strategies
-
-| Type | Keywords | Strategy |
-|------|----------|----------|
-| **manager** | manager, coach, wenger | k=12 (biographical depth) |
-| **business** | owner, finance, investment | k=12 (complex narratives) |
-| **player** | player, striker, defender | k=12 (career spanning) |
-| **tactics** | formation, pressing, system | k=8 (focused concepts) |
-| **comparison** | vs, compare, difference | k=8 (dual focus) |
-| **historical** | why, how, evolved | k=8 (causal chains) |
 
 ### Metadata Logging
 
@@ -431,84 +366,6 @@ After building database, explore:
 
 ---
 
-## 🔮 Future Enhancements
-
-### Planned Features
-- [ ] Multi-modal support (images, diagrams)
-- [ ] Dynamic graph updates (incremental PDFs)
-- [ ] User feedback loop (thumbs up/down)
-- [ ] Query expansion with LLM
-- [ ] Export conversations to PDF
-- [ ] Multi-language support
-
-### Research Directions
-- Graph Neural Networks for learned embeddings
-- Reinforcement learning for optimal traversal
-- Hybrid BM25 + vector search
-- Cross-document reasoning improvements
-
----
-
-## 📚 Dependencies
-
-### Core Libraries
-
-```
-langchain-community>=0.0.20
-langchain-huggingface>=0.0.1
-sentence-transformers>=2.2.2
-faiss-cpu>=1.7.4
-networkx>=3.0
-spacy>=3.5.0
-nltk>=3.8.1
-pypdf>=3.17.0
-streamlit>=1.28.0
-scikit-learn>=1.3.0
-numpy>=1.24.0
-matplotlib>=3.7.0
-tqdm>=4.66.0
-python-dotenv>=1.0.0
-```
-
-Full requirements in `requirements.txt`
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit changes (`git commit -m 'Add AmazingFeature'`)
-4. Push to branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Development Setup
-
-```bash
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-pytest tests/
-
-# Format code
-black .
-isort .
-
-# Type checking
-mypy .
-```
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
 ## 🙏 Acknowledgments
 
 ### Source Materials
@@ -523,39 +380,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [spaCy](https://spacy.io) - Named entity recognition
 - [Streamlit](https://streamlit.io) - Web UI framework
 - [LangChain](https://langchain.com) - LLM orchestration
-
-### Research Papers
-- Lewis et al. (2020) - "Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
-- Reimers & Gurevych (2019) - "Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks"
-
----
-
-## 📞 Contact & Support
-
-- **Issues:** [GitHub Issues](https://github.com/yourusername/graph-rag-football/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/graph-rag-football/discussions)
-- **Email:** your.email@example.com
-
----
-
-## ⭐ Star History
-
-If you find this project useful, please consider giving it a star! ⭐
-
----
-
-## 📊 Project Statistics
-
-```
-Language: Python
-Lines of Code: ~2,500
-Files: 8 core modules
-Documentation: 50+ pages
-Test Coverage: 85%
-```
-
----
-
-**Built with ⚽ and knowledge graphs**
-
-*Last Updated: November 2024*
