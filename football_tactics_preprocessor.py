@@ -1,8 +1,3 @@
-"""
-Football Tactics Domain Preprocessor - Optimized for The Mixer PDF
-Normalizes football terminology and extracts key figures, teams, and tactics.
-"""
-
 import re
 from typing import Dict, List, Tuple
 
@@ -225,3 +220,4 @@ class FootballTacticsPreprocessor:
             keywords.append(f"offensive tactics: {', '.join(entities['offensive_concepts'])}")
         
         return " | ".join(keywords)
+
