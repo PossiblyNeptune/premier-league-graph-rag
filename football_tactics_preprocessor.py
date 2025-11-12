@@ -5,7 +5,6 @@ from typing import Dict, List, Tuple
 class FootballTacticsPreprocessor:
     """Preprocesses text to normalize football terminology and extract domain entities."""
     
-    # Key figures mentioned in The Mixer
     KEY_FIGURES = [
         'arsene wenger', 'alex ferguson', 'eric cantona', 'dennis bergkamp',
         'thierry henry', 'alan ball', 'matt le tissier', 'gary neville',
@@ -220,4 +219,5 @@ class FootballTacticsPreprocessor:
             keywords.append(f"offensive tactics: {', '.join(entities['offensive_concepts'])}")
         
         return " | ".join(keywords)
+
 
