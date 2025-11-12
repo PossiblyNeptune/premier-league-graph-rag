@@ -1,9 +1,3 @@
-"""
-Database Builder with Enhanced Logging and Error Handling
-Auto-scans PDFs and builds complete graph RAG database.
-Uses LOCAL Ollama (no API needed).
-"""
-
 import os
 import glob
 from dotenv import load_dotenv
@@ -129,3 +123,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     build_and_save_database(args.data, args.output)
+
