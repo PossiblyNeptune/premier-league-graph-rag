@@ -1,43 +1,36 @@
-"""
-Metadata Logger for Graph RAG System
-Tracks retrieval metrics, traversal decisions, graph connectivity, and answer quality for debugging.
-"""
-
 import json
 import os
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List
 import hashlib
 
 
 class MetadataLogger:
     """Logs retrieval, traversal, connectivity, and answer quality metrics for debugging and analysis."""
     
-    def __init__(self, log_dir: str = "retrieval_logs", graph=None):
+    def __init__(self, log_dir: str = "retrieval_logs"):
         """
         Initialize metadata logger.
         
         Args:
             log_dir: Directory to store logs
-            graph: Optional NetworkX graph for connectivity analysis
         """
         self.log_dir = log_dir
-        self.graph = graph
         os.makedirs(log_dir, exist_ok=True)
         print(f"📊 Metadata logging initialized: {log_dir}/")
     
     def log_query_session(self, 
-                         query: str,
-                         query_type: str,
-                         retrieved_docs: List[Dict],
-                         traversal_path: List[int],
-                         traversal_decisions: List[Dict],
-                         filtered_content: Dict[int, str],
-                         final_answer: str,
-                         response_time: float,
-                         answer_confidence: float = None,
-                         is_complete: bool = None,
-                         missing_elements: List[str] = None) -> str:
+                          query: str,
+                          query_type: str,
+                          retrieved_docs: List[Dict],
+                          traversal_path: List[int],
+                          traversal_decisions: List[Dict],
+                          filtered_content: Dict[int, str],
+                          final_answer: str,
+                          response_time: float,
+                          answer_confidence: float = None,
+                          is_complete: bool = None,
+                          missing_elements: List[str] = None) -> str:
         """
         Logs a complete query session with all debugging info.
         
@@ -61,7 +54,6 @@ class MetadataLogger:
             (query + datetime.now().isoformat()).encode()
         ).hexdigest()[:12]
         
-        # Calculate graph connectivity metrics
         connectivity_metrics = self._calculate_connectivity_metrics(traversal_path)
         
         log_entry = {
@@ -79,7 +71,7 @@ class MetadataLogger:
                     for doc in retrieved_docs
                 ] if retrieved_docs else [],
                 'retrieval_diversity': self._calculate_retrieval_diversity(retrieved_docs),
-            },           
+            },            
             
             # ============ GRAPH TRAVERSAL PHASE ============
             'graph_traversal': {
@@ -132,7 +124,6 @@ class MetadataLogger:
             }
         }
         
-        # Save to JSON
         log_file = os.path.join(self.log_dir, f"{session_id}.json")
         try:
             with open(log_file, 'w') as f:
@@ -144,14 +135,14 @@ class MetadataLogger:
         return session_id
     
     def log_traversal_decision(self,
-                              current_node: int,
-                              target_node: int,
-                              edge_weight: float,
-                              shared_concepts: List[str],
-                              concept_relevance: float,
-                              reason_selected: str,
-                              accumulated_context_length: int,
-                              traversal_depth: int):
+                               current_node: int,
+                               target_node: int,
+                               edge_weight: float,
+                               shared_concepts: List[str],
+                               concept_relevance: float,
+                               reason_selected: str,
+                               accumulated_context_length: int,
+                               traversal_depth: int):
         """Logs individual traversal decisions for debugging."""
         decision = {
             'current_node': current_node,
@@ -166,89 +157,6 @@ class MetadataLogger:
             'timestamp': datetime.now().isoformat()
         }
         return decision
-    
-    def generate_retrieval_report(self, session_id: str) -> Dict:
-        """
-        Generates a debugging report for a session.
-        
-        Args:
-            session_id: The session ID to generate report for
-            
-        Returns:
-            Detailed report dictionary
-        """
-        log_file = os.path.join(self.log_dir, f"{session_id}.json")
-        
-        if not os.path.exists(log_file):
-            return {'error': f"Session {session_id} not found"}
-        
-        try:
-            with open(log_file, 'r') as f:
-                session = json.load(f)
-            
-            report = {
-                'session_id': session_id,
-                'timestamp': session['timestamp'],
-                'query': session['query'],
-                'query_type': session['query_type'],
-                'summary': {
-                    'initial_retrieval_count': session['initial_retrieval']['num_docs_retrieved'],
-                    'nodes_visited': session['graph_traversal']['num_nodes'],
-                    'total_context_used': session['context_quality']['total_context_length'],
-                    'answer_length': session['response_quality']['answer_length'],
-                    'response_time': session['response_quality']['response_time_seconds'],
-                    'is_complete': session['response_quality']['is_complete'],
-                    'confidence_score': session['response_quality']['confidence_score']
-                },
-                'connectivity_metrics': session['graph_connectivity'],
-                'quality_metrics': {
-                    'retrieval_efficiency': session['efficiency_metrics']['retrieval_to_traversal_ratio'],
-                    'context_utilization': session['efficiency_metrics']['context_utilization'],
-                    'response_time_per_node': session['efficiency_metrics']['response_time_per_node'],
-                    'answer_coherence': session['response_quality']['answer_coherence']
-                },
-                'traversal_path': session['graph_traversal']['nodes_visited'],
-            }
-            
-            return report
-        except Exception as e:
-            return {'error': f"Could not read session: {e}"}
-    
-    def get_session_logs(self, limit: int = 10) -> List[Dict]:
-        """Get recent session logs."""
-        try:
-            log_files = sorted(
-                [f for f in os.listdir(self.log_dir) if f.endswith('.json')],
-                reverse=True
-            )[:limit]
-            
-            sessions = []
-            for log_file in log_files:
-                with open(os.path.join(self.log_dir, log_file), 'r') as f:
-                    sessions.append(json.load(f))
-            
-            return sessions
-        except Exception as e:
-            print(f"⚠️  Could not read logs: {e}")
-            return []
-    
-    def get_statistics_summary(self) -> Dict:
-        """Get summary statistics across all sessions."""
-        sessions = self.get_session_logs(limit=100)
-        
-        if not sessions:
-            return {'error': 'No sessions to analyze'}
-        
-        stats = {
-            'total_sessions': len(sessions),
-            'avg_response_time': sum(s['response_quality']['response_time_seconds'] for s in sessions) / len(sessions),
-            'avg_confidence': sum(s['response_quality']['confidence_score'] for s in sessions if s['response_quality']['confidence_score']) / len([s for s in sessions if s['response_quality']['confidence_score']]),
-            'avg_nodes_visited': sum(s['graph_traversal']['num_nodes'] for s in sessions) / len(sessions),
-            'avg_context_length': sum(s['context_quality']['total_context_length'] for s in sessions) / len(sessions),
-            'query_type_distribution': self._count_query_types(sessions),
-        }
-        
-        return stats
     
     # ============ HELPER METHODS ============
     
@@ -291,7 +199,6 @@ class MetadataLogger:
         if len(retrieved_docs) < 2:
             return 0.0
         
-        # Simple metric: unique sources
         sources = set(doc.metadata.get('source', 'unknown') for doc in retrieved_docs)
         return round(len(sources) / len(retrieved_docs), 4)
     
@@ -314,7 +221,6 @@ class MetadataLogger:
                 'avg_step_distance': 0.0,
             }
         
-        # Check for jumps (non-sequential nodes)
         jumps = 0
         total_distance = 0
         for i in range(len(traversal_path) - 1):
@@ -337,18 +243,14 @@ class MetadataLogger:
         if not answer_text or len(answer_text) < 50:
             return 0.3
         
-        # Simple heuristics
         score = 0.7
         
-        # Bonus for structure
         if any(phrase in answer_text.lower() for phrase in ['because', 'however', 'therefore']):
             score += 0.1
         
-        # Penalty for fragments
         if answer_text.count('.') < 2:
             score -= 0.2
         
-        # Bonus for specificity
         if any(word in answer_text.lower() for word in ['specifically', 'example', 'achieved', 'won']):
             score += 0.1
         
