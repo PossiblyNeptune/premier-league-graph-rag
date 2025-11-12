@@ -1,22 +1,12 @@
-"""
-Graph RAG Query Engine for Premier League Football
-Flexible guidance covering tactics, players, managers, team performance, club business, and football history.
-Based on "The Mixer" (Michael Cox - Tactics) and "The Club" (Robinson & Clegg - Business).
-"""
-
 import os
 import heapq
 import time
 from dotenv import load_dotenv
 from typing import List, Tuple, Dict
 
-from langchain_community.llms import Ollama
 from langchain_core.prompts import PromptTemplate
 
-from create_embeddings import DocumentProcessor
-from create_database import KnowledgeGraph
 from metadata_logger import MetadataLogger
-from football_tactics_preprocessor import FootballTacticsPreprocessor
 
 load_dotenv()
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
@@ -37,10 +27,8 @@ class QueryEngine:
         self.llm = llm
         self.max_context_length = 4000
         self.metadata_logger = MetadataLogger()
-        self.preprocessor = FootballTacticsPreprocessor()
         self.traversal_decisions = []
         
-        # Create node lookup cache for fast O(1) access
         self.content_to_node_id = {}
         for node_id in self.knowledge_graph.graph.nodes:
             content = self.knowledge_graph.graph.nodes[node_id]['content']
@@ -63,42 +51,35 @@ class QueryEngine:
         
         # CHECK MANAGER FIRST (before player) - important for queries like "who did X coach"
         if any(kw in query_lower for kw in ['manager', 'coach', 'managed', 'coached', 
-                                             'wenger', 'ferguson', 'clough', 'revie',
-                                             'who managed', 'who coached', 'did coach',
-                                             'did manage', 'under coach', 'under manager']):
+                                            'wenger', 'ferguson', 'clough', 'revie',
+                                            'who managed', 'who coached', 'did coach',
+                                            'did manage', 'under coach', 'under manager']):
             return 'manager'
         
-        # Business/ownership queries (new for 2-book system)
         elif any(kw in query_lower for kw in ['owner', 'ownership', 'investment', 'finance',
-                                               'money', 'abramovich', 'glazer', 'kroenke',
-                                               'takeover', 'business', 'revenue', 'commercial']):
+                                              'money', 'abramovich', 'glazer', 'kroenke',
+                                              'takeover', 'business', 'revenue', 'commercial']):
             return 'business'
         
-        # Player queries
         elif any(kw in query_lower for kw in ['player', 'striker', 'goalkeeper', 'defender', 
-                                               'midfielder', 'footballer', 'how did']):
+                                              'midfielder', 'footballer', 'how did']):
             return 'player'
         
-        # Tactics queries
         elif any(kw in query_lower for kw in ['formation', 'setup', 'system', 'tactic', 'pressing',
-                                               '4-3-3', '5-2-3', '3-5-2', 'how to', 'explain']):
+                                              '4-3-3', '5-2-3', '3-5-2', 'how to', 'explain']):
             return 'tactics'
         
-        # Team performance queries
         elif any(kw in query_lower for kw in ['team', 'performance', 'season', 'won', 'title', 
-                                               'league', 'trophy', 'arsenal', 'united', 'liverpool']):
+                                              'league', 'trophy', 'arsenal', 'united', 'liverpool']):
             return 'team_performance'
         
-        # Comparison queries
         elif any(kw in query_lower for kw in ['vs', 'compare', 'comparison', 'difference', 
-                                               'better', 'advantage']):
+                                              'better', 'advantage']):
             return 'comparison'
         
-        # Historical queries
         elif any(kw in query_lower for kw in ['why', 'how', 'reason', 'caused', 'evolved', 'changed']):
             return 'historical'
         
-        # Cultural queries
         elif any(kw in query_lower for kw in ['culture', 'style', 'approach', 'philosophy', 'mentality']):
             return 'cultural'
         
@@ -128,7 +109,6 @@ class QueryEngine:
 
         print("\n🧭 Traversing the knowledge graph:")
 
-        # Initialize priority queue with closest nodes from relevant docs
         for doc in relevant_docs:
             try:
                 content_hash = hash(doc.page_content[:100])
@@ -138,9 +118,9 @@ class QueryEngine:
                     priority = 1.0
                     heapq.heappush(priority_queue, (priority, node_id))
                     distances[node_id] = priority
-                    
+                
             except Exception as e:
-                print(f"  ⚠️  Error initializing traversal: {e}")
+                print(f"    ⚠️  Error initializing traversal: {e}")
                 continue
 
         step = 0
@@ -156,11 +136,10 @@ class QueryEngine:
                 node_content = self.knowledge_graph.graph.nodes[current_node]['content']
                 node_concepts = self.knowledge_graph.graph.nodes[current_node].get('concepts', [])
 
-                # Check if adding this node would exceed context limit
                 new_context = expanded_context + "\n" + node_content if expanded_context else node_content
                 
                 if len(new_context) > self.max_context_length:
-                    print(f"  ⚠️  Context limit reached ({len(new_context)} chars)")
+                    print(f"    ⚠️  Context limit reached ({len(new_context)} chars)")
                     break
                 
                 filtered_content[current_node] = node_content
@@ -170,7 +149,6 @@ class QueryEngine:
                 print(f"  Concepts: {', '.join(node_concepts[:5]) if node_concepts else 'None'}")
                 print(f"  Content length: {len(node_content)} chars")
 
-                # Process neighboring nodes
                 node_concepts_set = set(node_concepts)
                 if not node_concepts_set.issubset(visited_concepts):
                     visited_concepts.update(node_concepts_set)
@@ -222,7 +200,7 @@ class QueryEngine:
         """
         guidance_map = {
             'manager': "Focus on: philosophy, key decisions, achievements, team influence, legacy",
-            'business': "Focus on: ownership, financial impact, strategic decisions, club development",  # NEW
+            'business': "Focus on: ownership, financial impact, strategic decisions, club development",
             'player': "Focus on: playing style, achievements, team impact, background, career evolution",
             'tactics': "Focus on: how it works, who used it, key players, performance impact, variations",
             'team_performance': "Focus on: results, contributing factors, key personnel, challenges, context",
@@ -258,7 +236,6 @@ Provide a clear, direct answer based on the context. Be specific and reference r
                 "guidance": guidance
             })
             
-            # Extract answer text
             if hasattr(response, 'content'):
                 answer_text = response.content
             elif isinstance(response, str):
@@ -266,10 +243,9 @@ Provide a clear, direct answer based on the context. Be specific and reference r
             else:
                 answer_text = str(response)
             
-            # Calculate confidence
             answer_length = len(answer_text)
             has_structure = any(phrase in answer_text.lower() for phrase in 
-                              ['because', 'however', 'therefore', 'example', 'specifically', 'particularly'])
+                                ['because', 'however', 'therefore', 'example', 'specifically', 'particularly'])
             
             if answer_length > 300 and has_structure:
                 confidence = 0.85
@@ -283,7 +259,6 @@ Provide a clear, direct answer based on the context. Be specific and reference r
         except Exception as e:
             print(f"\n❌ ERROR in _generate_answer: {e}")
             
-            # Fallback: return context-based summary if LLM fails
             if context:
                 first_sentences = context.split('\n')[0:3]
                 fallback_answer = " ".join(first_sentences)[:500]
@@ -296,12 +271,10 @@ Provide a clear, direct answer based on the context. Be specific and reference r
         print("\n🔍 Retrieving relevant documents...")
         
         enriched_query = self._enrich_query(query)
-        print(f"   Enriched query: {enriched_query}")
+        print(f"    Enriched query: {enriched_query}")
         
-        # Get query type and adjust retrieval
         query_type = self._classify_query(query)
         
-        # Biographical/manager/business queries need more results
         if query_type in ['manager', 'player', 'business']:
             k = 12
         else:
@@ -313,7 +286,7 @@ Provide a clear, direct answer based on the context. Be specific and reference r
         )
         
         results = base_retriever.invoke(enriched_query)
-        print(f"   ✓ Retrieved {len(results)} relevant documents (k={k})")
+        print(f"    ✓ Retrieved {len(results)} relevant documents (k={k})")
         
         return results
 
@@ -322,31 +295,26 @@ Provide a clear, direct answer based on the context. Be specific and reference r
         enriched = query
         
         expansions = {
-            # Biographical/Manager focus
             'wenger': 'Arsene Wenger Arsenal manager biography history philosophy achievements',
             'arsene': 'Arsene Wenger Arsenal manager history',
             'ferguson': 'Alex Ferguson Sir Alex Manchester United biography history manager',
             'clough': 'Brian Clough manager football history',
             
-            # Business/Ownership (new for 2-book system)
             'owner': 'ownership investment finance club business strategy',
             'abramovich': 'Roman Abramovich Chelsea owner investment',
             'glazer': 'Glazer family Manchester United ownership',
             'kroenke': 'Stan Kroenke Arsenal ownership',
             
-            # Team focus
             'arsenal': 'Arsenal Gunners invincibles history',
             'united': 'Manchester United history manager achievements',
             'liverpool': 'Liverpool FC Reds history manager',
             'chelsea': 'Chelsea Roman Abramovich business',
             'city': 'Manchester City investment ownership',
             
-            # Tactical focus
             'tactics': 'tactics formation system approach strategy',
             'formation': 'formation setup system structure',
             'pressing': 'pressing press defense tactics',
             
-            # Generic
             'player': 'player footballer athlete career',
             'manager': 'manager coach boss philosophy',
             'team': 'team squad side club',
