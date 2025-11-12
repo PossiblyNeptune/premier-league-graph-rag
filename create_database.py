@@ -1,23 +1,12 @@
-"""
-Knowledge Graph Construction with Football Tactics Domain Optimization
-Enhanced concept extraction, edge weighting, and metadata tracking.
-Uses LOCAL Ollama with Mistral 7B.
-"""
-
 import networkx as nx
 import pickle
 import os
 import time
-import matplotlib.pyplot as plt
-from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
 import nltk
 import spacy
 from spacy.cli import download
 from sklearn.metrics.pairwise import cosine_similarity
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from tqdm import tqdm
-from typing import List, Dict, Tuple
 from dotenv import load_dotenv
 import json
 
@@ -32,33 +21,8 @@ nltk.download('wordnet', quiet=True)
 nltk.download('punkt_tab', quiet=True)
 
 
-class RateLimiter:
-    """Simple rate limiter for API calls."""
-    def __init__(self, max_calls_per_minute=60):
-        """
-        Initialize rate limiter.
-        
-        Args:
-            max_calls_per_minute: Maximum API calls per minute (default 60 for HF)
-        """
-        self.max_calls_per_minute = max_calls_per_minute
-        self.min_interval = 60.0 / max_calls_per_minute
-        self.last_call_time = 0
-    
-    def wait_if_needed(self):
-        """Wait if necessary to respect rate limit."""
-        current_time = time.time()
-        time_since_last_call = current_time - self.last_call_time
-        
-        if time_since_last_call < self.min_interval:
-            sleep_time = self.min_interval - time_since_last_call
-            time.sleep(sleep_time)
-        
-        self.last_call_time = time.time()
-
-
 class KnowledgeGraph:
-    def __init__(self, llm=None, edges_threshold=0.7, max_api_calls_per_minute=60, 
+    def __init__(self, llm=None, edges_threshold=0.7, 
                  save_progress=True, progress_dir="graph_progress"):
         """
         Initializes the KnowledgeGraph with domain-optimized settings.
@@ -66,17 +30,14 @@ class KnowledgeGraph:
         Args:
         - llm: An instance of a large language model (optional, can be set later).
         - edges_threshold (float): The threshold for adding edges based on similarity. 
-        - max_api_calls_per_minute (int): Maximum API calls per minute. Default is 60.
         - save_progress (bool): Whether to save progress visualizations. Default is True.
         - progress_dir (str): Directory to save progress visualizations.
         """
         self.graph = nx.Graph()
-        self.lemmatizer = WordNetLemmatizer()
         self.concept_cache = {}
         self.nlp = self._load_spacy_model()
         self.edges_threshold = edges_threshold
         self.llm = llm
-        self.rate_limiter = RateLimiter(max_api_calls_per_minute)
         self.save_progress = save_progress
         self.progress_dir = progress_dir
         self.preprocessor = FootballTacticsPreprocessor()
@@ -110,14 +71,11 @@ class KnowledgeGraph:
         if content in self.concept_cache:
             return self.concept_cache[content]
 
-        # Extract named entities using spaCy
         doc = self.nlp(content)
         named_entities = [ent.text for ent in doc.ents if ent.label_ in ["PERSON", "ORG", "GPE"]]
 
-        # Extract football tactics entities
         tactical_entities = self.preprocessor.extract_tactical_entities(content)
         
-        # Combine named entities with tactical entities
         tactical_concepts = (
             tactical_entities.get('formations', []) +
             tactical_entities.get('tactical_roles', []) +
@@ -128,7 +86,6 @@ class KnowledgeGraph:
         # Combine all concepts (NO LLM - fast and reliable)
         all_concepts = list(set(named_entities + tactical_concepts))[:15]
         
-        # Track extraction metadata
         self.extraction_metadata.append({
             'content_hash': hash(content[:100]),
             'named_entities_count': len(named_entities),
@@ -170,33 +127,28 @@ class KnowledgeGraph:
         
         self.llm = llm
         
-        # Step 1: Add nodes
         print("\nStep 1: Adding nodes to graph...")
         self._add_nodes(splits)
         
-        # Step 2: Create embeddings
         print("\nStep 2: Creating embeddings...")
         embeddings = self._create_embeddings(splits, embedding_model)
         
-        # Step 3: Extract concepts
         print("\nStep 3: Extracting football tactical concepts and entities...")
         self._extract_concepts(splits)
         
-        # Step 4: Add edges
         print("\nStep 4: Adding edges based on similarity and shared concepts...")
         self._add_edges(embeddings)
         
-        # Save extraction metrics
         self._save_extraction_metadata()
         
         print("\n" + "="*60)
         print(f"✅ Knowledge Graph Built Successfully!")
-        print(f"   Total Nodes: {len(self.graph.nodes)}")
-        print(f"   Total Edges: {len(self.graph.edges)}")
-        print(f"   Extraction Success Rate: {self._get_extraction_success_rate():.1%}")
+        print(f"    Total Nodes: {len(self.graph.nodes)}")
+        print(f"    Total Edges: {len(self.graph.edges)}")
+        print(f"    Extraction Success Rate: {self._get_extraction_success_rate():.1%}")
         print("="*60)
 
-        print("\n📊 Generating graph visualizations...")    
+        print("\n📊 Generating graph visualizations...")   
         visualizer = GraphVisualizer(self.graph, output_dir="graph_visualizations")
         visualizer.generate_all_visualizations()
 
@@ -232,7 +184,7 @@ class KnowledgeGraph:
         texts = [split.page_content for split in splits]
         print(f"Creating embeddings for {len(texts)} text chunks...")
         
-        # Batch embeddings to respect rate limits
+        # Batch embeddings
         batch_size = 96
         all_embeddings = []
         
@@ -289,7 +241,6 @@ class KnowledgeGraph:
                 # Use LOWER threshold (0.7) for football domain specificity
                 if similarity_score > self.edges_threshold:
                     
-                    # Get concepts for both nodes
                     concepts1 = set(self.graph.nodes[node1].get('concepts', []))
                     concepts2 = set(self.graph.nodes[node2].get('concepts', []))
                     shared_concepts = concepts1 & concepts2
@@ -374,7 +325,7 @@ class KnowledgeGraph:
         print(f"✓ Knowledge graph loaded successfully.")
         print(f"  Nodes: {len(self.graph.nodes)}, Edges: {len(self.graph.edges)}")
 
-    def get_graph_statistics(self) -> Dict:
+    def get_graph_statistics(self) -> dict:
         """
         Returns statistics about the knowledge graph.
 
@@ -415,7 +366,6 @@ class KnowledgeGraph:
         
         metadata_file = os.path.join(self.progress_dir, "extraction_metadata.json")
         
-        # Calculate statistics
         total_extractions = len(self.extraction_metadata)
         successful = sum(1 for m in self.extraction_metadata if m['extraction_success'])
         
