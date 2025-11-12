@@ -1,10 +1,3 @@
-"""
-Streamlit Chatbot UI for Premier League Football Knowledge
-Enhanced debugging, metadata display, and general football theming.
-Based on **The Mixer** (Michael Cox - Tactics) and **The Club** (Robinson & Clegg - Business).
-Uses LOCAL Ollama.
-"""
-
 import os
 import streamlit as st
 from dotenv import load_dotenv
@@ -16,7 +9,6 @@ import traceback
 from create_embeddings import DocumentProcessor
 from create_database import KnowledgeGraph
 from graph_rag import QueryEngine
-from metadata_logger import MetadataLogger
 
 load_dotenv()
 
@@ -26,25 +18,20 @@ def load_chatbot(db_path: str = "saved_db"):
     """Load chatbot with pre-built database (cached)."""
     
     llm = Ollama(
-        model="gpt-oss:120b-cloud",  # Change from "mistral"
+        model="gpt-oss:120b-cloud",
         base_url="http://localhost:11434",
         temperature=0,
         num_predict=4096
     )
     
-    # Load vector store
     processor = DocumentProcessor()
     vector_store_path = os.path.join(db_path, "vector_store")
     vector_store = processor.load_vector_store(vector_store_path)
     
-    # Load knowledge graph
     knowledge_graph = KnowledgeGraph()
     kg_path = os.path.join(db_path, "knowledge_graph.pkl")
     knowledge_graph.load_graph(kg_path)
-
-    logger = MetadataLogger(graph=knowledge_graph.graph)
     
-    # Initialize query engine
     query_engine = QueryEngine(vector_store, knowledge_graph, llm)
     
     return query_engine, vector_store, knowledge_graph
@@ -93,7 +80,6 @@ def main():
         layout="wide"
     )
     
-    # Custom CSS - Premier League Theme
     st.markdown("""
         <style>
         .chunk-box {
@@ -150,14 +136,12 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # Header
     st.title("⚽ Premier League Knowledge Bot")
     st.markdown("""
     Explore Premier League history, business, tactics, players, managers, and teams. 
     Powered by **The Mixer** (Michael Cox - Tactics) and **The Club** (Robinson & Clegg - Business)
     """)
     
-    # Sidebar
     with st.sidebar:
         st.header("📖 About This Bot")
         st.markdown("""
@@ -180,13 +164,12 @@ def main():
         - "Describe the 4-3-3 formation"
         - "Who were key players in Liverpool's success?"
         - "How did pressing tactics change English football?"
-        - "Compare different managerial approaches"
-        - "What changed when Wenger focused on diet?"
+        - "Compare the tactics of Pep Guardiola and Sir Alex Ferguson"
+        - "What was the influence of Roman Abramovich on the Premier League"
         """)
         
         st.divider()
         
-        # Database info
         db_path = "saved_db"
         if os.path.exists(db_path):
             st.success("✅ Knowledge Base Loaded")
@@ -207,14 +190,12 @@ def main():
             st.cache_resource.clear()
             st.rerun()
         
-        # Debug toggle
         debug_mode = st.checkbox("🔍 Show Retrieval Details", value=False)
         
         st.divider()
 
         st.subheader("📊 Graph Connectivity")
 
-        # Display connectivity metrics if available
         if os.path.exists("graph_visualizations/connectivity_report.json"):
             import json
             with open("graph_visualizations/connectivity_report.json", 'r') as f:
@@ -234,14 +215,12 @@ def main():
                 st.info("Open `graph_visualizations/dashboard.html` in your browser")
         st.caption("Made with ⚽ and knowledge graphs | Powered by Local Ollama")
     
-    # Check if database exists
     if not os.path.exists("saved_db"):
         st.error("⚠️ Knowledge base not found!")
         st.info("Please run the following command first:")
         st.code("python build_database.py", language="bash")
         return
     
-    # Load chatbot
     try:
         with st.spinner("Loading Premier League knowledge..."):
             query_engine, vector_store, knowledge_graph = load_chatbot()
@@ -254,16 +233,13 @@ def main():
                 st.code(traceback.format_exc())
         return
     
-    # Initialize chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
-    # Display chat history
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
             
-            # Show debug info if available
             if debug_mode and "debug_info" in message:
                 with st.expander("📊 Retrieval Details"):
                     debug_info = message["debug_info"]
@@ -276,33 +252,27 @@ def main():
                     with col3:
                         st.metric("Query Category", debug_info.get('query_type', 'General').title())
                     
-                    # Traversal path
                     if debug_info.get('traversal_path'):
                         st.write("**Knowledge Graph Path:**")
                         st.code(f"Nodes visited: {debug_info['traversal_path']}", language="text")
                     
-                    # Chunks used
                     if debug_info.get('chunks'):
                         st.write("**Sources Referenced:**")
                         for i, chunk_info in enumerate(debug_info['chunks'], 1):
                             with st.expander(f"📄 Reference {i} - {chunk_info['source']} (Page {chunk_info['page']})"):
                                 st.markdown(f"<div class='chunk-box'>{chunk_info['content'][:500]}...</div>", 
-                                          unsafe_allow_html=True)
+                                            unsafe_allow_html=True)
     
-    # Chat input
     if prompt := st.chat_input("Ask about Premier League football, players, managers, tactics..."):
-        # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # Generate response
         with st.chat_message("assistant"):
             with st.spinner("Searching knowledge base..."):
                 try:
                     response, traversal_path, filtered_content = query_engine.query(prompt)
                     
-                    # Extract response text
                     if hasattr(response, 'content'):
                         response_text = response.content
                     else:
@@ -310,7 +280,6 @@ def main():
                     
                     st.markdown(response_text)
                     
-                    # Prepare debug info
                     debug_info = {
                         'traversal_path': traversal_path,
                         'query_type': query_engine._classify_query(prompt),
@@ -318,7 +287,6 @@ def main():
                         'chunks': []
                     }
                     
-                    # Extract chunk information
                     for node_id in traversal_path:
                         if node_id in filtered_content:
                             content = filtered_content[node_id]
@@ -331,7 +299,6 @@ def main():
                                 'content': content
                             })
                     
-                    # Show debug info in expander
                     if debug_mode:
                         with st.expander("🔍 Retrieval Analysis"):
                             col1, col2, col3, col4 = st.columns(4)
@@ -344,7 +311,6 @@ def main():
                             with col4:
                                 st.metric("Total Edges Used", len(traversal_path) - 1)
                             
-                            # Sources breakdown
                             st.write("**Sources Used:**")
                             source_counts = {}
                             for chunk in debug_info['chunks']:
@@ -357,7 +323,6 @@ def main():
                                     with col:
                                         st.metric(source, f"{count} ref")
                     
-                    # Add assistant message
                     st.session_state.messages.append({
                         "role": "assistant",
                         "content": response_text,
@@ -372,13 +337,12 @@ def main():
                         with st.expander("🔧 Error Details"):
                             st.code(traceback.format_exc(), language="python")
                     
-                    st.session_state.messages.append({
+                    st.session_math.messages.append({
                         "role": "assistant",
                         "content": error_msg,
                         "error": traceback.format_exc()
                     })
     
-    # Footer with chat controls
     col1, col2, col3 = st.columns([1, 3, 1])
     with col1:
         if st.button("🔴 Clear Chat"):
