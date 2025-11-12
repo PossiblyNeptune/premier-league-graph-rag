@@ -109,7 +109,7 @@ def build_and_save_database(data_folder: str = "data", output_dir: str = "saved_
     print(f"Total edges in graph: {len(kg.graph.edges)}")
     print(f"\n🚀 You can now run the chatbot UI!")
     print("    Command: streamlit run chatbot.py")
-    print("="*6D)
+    print("="*6)
 
 if __name__ == "__main__":
     import argparse
@@ -123,4 +123,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     build_and_save_database(args.data, args.output)
+
 
