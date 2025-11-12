@@ -121,7 +121,7 @@ if __name__ == "__main__":
         
         print("\n" + "="*60)
         print("Sample Processed Chunks:")
-        print("="*6Dos)
+        print("="*6)
         for i, split in enumerate(splits[:2]):
             print(f"\nChunk {i}:")
             print(f"  Length: {split.metadata['chunk_length']}")
@@ -133,3 +133,4 @@ if __name__ == "__main__":
         print("="*60)
     else:
         print(f"\nTest file not found: {test_path}")
+
