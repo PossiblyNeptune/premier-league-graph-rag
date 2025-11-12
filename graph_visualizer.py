@@ -1,13 +1,7 @@
-"""
-Graph Visualizer for Premier League RAG
-Generates interactive and static visualizations of knowledge graph connectivity.
-"""
-
 import networkx as nx
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import plotly.express as px
-from typing import Dict, List, Tuple
+from typing import Dict
 import json
 import os
 
@@ -37,12 +31,10 @@ class GraphVisualizer:
         """
         print("\n🔍 Analyzing graph connectivity...")
         
-        # Basic metrics
         num_nodes = len(self.graph.nodes)
         num_edges = len(self.graph.edges)
         density = nx.density(self.graph)
         
-        # Connected components
         if nx.is_connected(self.graph):
             num_components = 1
             is_connected = True
@@ -50,19 +42,15 @@ class GraphVisualizer:
             num_components = nx.number_connected_components(self.graph)
             is_connected = False
         
-        # Get component sizes
         components = list(nx.connected_components(self.graph))
         component_sizes = sorted([len(c) for c in components], reverse=True)
         
         # Centrality measures
         degree_centrality = nx.degree_centrality(self.graph)
         betweenness = nx.betweenness_centrality(self.graph)
-        closeness = nx.closeness_centrality(self.graph)
         
-        # Find hub nodes (high degree centrality)
         top_hubs = sorted(degree_centrality.items(), key=lambda x: x[1], reverse=True)[:10]
         
-        # Find bridge nodes (high betweenness)
         top_bridges = sorted(betweenness.items(), key=lambda x: x[1], reverse=True)[:10]
         
         analysis = {
@@ -133,7 +121,6 @@ class GraphVisualizer:
         components = list(nx.connected_components(self.graph))
         largest_component = max(components, key=len)
         
-        # Create subgraph
         subgraph = self.graph.subgraph(largest_component).copy()
         
         if len(subgraph.nodes) > max_nodes:
@@ -143,10 +130,8 @@ class GraphVisualizer:
             sample_nodes = random.sample(list(subgraph.nodes), max_nodes)
             subgraph = subgraph.subgraph(sample_nodes).copy()
         
-        # Use spring layout
         pos = nx.spring_layout(subgraph, k=0.5, iterations=50, seed=42)
         
-        # Prepare edge trace
         edge_x = []
         edge_y = []
         for edge in subgraph.edges():
@@ -167,7 +152,6 @@ class GraphVisualizer:
             showlegend=False
         )
         
-        # Prepare node trace
         node_x = []
         node_y = []
         node_color = []
@@ -185,12 +169,10 @@ class GraphVisualizer:
             node_size.append(10 + degree * 2)
             node_color.append(degree)
             
-            # Get concept info
             concepts = self.graph.nodes[node].get('concepts', [])
             concept_text = ', '.join(concepts[:3]) if concepts else 'No concepts'
             node_text.append(f"Node {node}<br>Degree: {degree}<br>{concept_text}")
         
-        # FIX: Remove titleside parameter
         node_trace = go.Scatter(
             x=node_x, y=node_y,
             mode='markers',
@@ -204,8 +186,7 @@ class GraphVisualizer:
                 colorbar=dict(
                     thickness=15,
                     title='Node Degree',
-                    # REMOVED: titleside='right'  ← This was causing error
-                    len=0.7  # Alternative: set length instead
+                    len=0.7
                 ),
                 line=dict(width=1, color='white')
             )
@@ -271,7 +252,7 @@ class GraphVisualizer:
                     <div class="metric-title">Graph Density</div>
                     <div class="metric-value">{analysis['density']}</div>
                 </div>
-                <div class="metric">
+                <div class"metric">
                     <div class="metric-title">Average Node Degree</div>
                     <div class="metric-value">{analysis['average_degree']:.2f}</div>
                 </div>
@@ -326,7 +307,6 @@ class GraphVisualizer:
         """
         
         dashboard_path = os.path.join(self.output_dir, "dashboard.html")
-        # FIX: Add encoding='utf-8' for Windows Unicode support
         with open(dashboard_path, 'w', encoding='utf-8') as f:
             f.write(summary_html)
         
