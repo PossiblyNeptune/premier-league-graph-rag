@@ -1,14 +1,7 @@
-"""
-Document Processor with Football Tactics Domain Preprocessing
-Creates embeddings and vector store using HuggingFace embeddings.
-"""
-
 import numpy as np
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from sklearn.metrics.pairwise import cosine_similarity
-from typing import List
 import os
 from dotenv import load_dotenv
 
@@ -74,8 +67,8 @@ class DocumentProcessor:
             split.metadata['tactical_roles'] = tactical_entities.get('tactical_roles', [])
             split.metadata['defensive_concepts'] = tactical_entities.get('defensive_concepts', [])
             split.metadata['offensive_concepts'] = tactical_entities.get('offensive_concepts', [])
-            split.metadata['key_figures'] = tactical_entities.get('key_figures', [])  # NEW
-            split.metadata['key_teams'] = tactical_entities.get('key_teams', [])  # NEW
+            split.metadata['key_figures'] = tactical_entities.get('key_figures', [])
+            split.metadata['key_teams'] = tactical_entities.get('key_teams', [])
             
             tactical_keywords = FootballTacticsPreprocessor.create_tactical_keywords(tactical_entities)
             split.metadata['tactical_keywords'] = tactical_keywords
@@ -87,14 +80,6 @@ class DocumentProcessor:
         print("✓ Vector store created successfully!")
         
         return splits, vector_store
-
-
-    def compute_similarity_matrix(self, embeddings: np.ndarray) -> np.ndarray:
-        """Computes a cosine similarity matrix for embeddings."""
-        print("Computing similarity matrix...")
-        similarity_matrix = cosine_similarity(embeddings)
-        print(f"✓ Similarity matrix computed with shape {similarity_matrix.shape}.")
-        return similarity_matrix
 
     def save_vector_store(self, vector_store, path: str = "vector_store"):
         """Saves the FAISS vector store to disk."""
@@ -112,39 +97,6 @@ class DocumentProcessor:
         )
         print("✓ Vector store loaded successfully.")
         return vector_store
-
-    def add_documents_to_vector_store(self, vector_store, documents):
-        """Adds new documents to vector store with preprocessing."""
-        print(f"Adding {len(documents)} new documents to vector store...")
-        splits = self.text_splitter.split_documents(documents)
-        
-        for split in splits:
-            processed_content, tactical_entities = self.preprocessor.preprocess_chunk(
-                split.page_content
-            )
-            split.page_content = processed_content
-            
-            # Store all extracted entities
-            split.metadata['formations'] = tactical_entities.get('formations', [])
-            split.metadata['tactical_roles'] = tactical_entities.get('tactical_roles', [])
-            split.metadata['defensive_concepts'] = tactical_entities.get('defensive_concepts', [])
-            split.metadata['offensive_concepts'] = tactical_entities.get('offensive_concepts', [])
-            split.metadata['key_figures'] = tactical_entities.get('key_figures', [])  # NEW
-            split.metadata['key_teams'] = tactical_entities.get('key_teams', [])  # NEW
-            
-            tactical_keywords = FootballTacticsPreprocessor.create_tactical_keywords(
-                tactical_entities
-            )
-            split.metadata['tactical_keywords'] = tactical_keywords
-        
-        vector_store.add_documents(splits)
-        print("✓ Documents added successfully.")
-        return vector_store
-
-
-    def get_embedding_dimension(self) -> int:
-        """Returns the embedding dimension (384 for all-MiniLM-L6-v2)."""
-        return 384
 
 
 # Example usage and testing
@@ -169,7 +121,7 @@ if __name__ == "__main__":
         
         print("\n" + "="*60)
         print("Sample Processed Chunks:")
-        print("="*60)
+        print("="*6Dos)
         for i, split in enumerate(splits[:2]):
             print(f"\nChunk {i}:")
             print(f"  Length: {split.metadata['chunk_length']}")
